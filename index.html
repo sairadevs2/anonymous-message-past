@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manghi Past</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+
+    /* Dark Mode */
+    body.dark-mode { background-color: #1a1a1a; color: #f5f5f5; }
+    body.dark-mode .card-bg { background: linear-gradient(135deg, #333, #000); }
+    body.dark-mode .text-gray-600 { color: #d1d5db !important; }
+    body.dark-mode .bg-white { background-color: #1a1a1a !important; }
+    body.dark-mode .text-black { color: #f5f5f5 !important; }
+
+    .card-bg { background: linear-gradient(135deg, #111, #444); }
+    .share-btn { background: linear-gradient(90deg, #ff0050, #ff7a00); }
+
+    /* Settings Menu */
+    #settingsMenu { transition: transform 0.3s ease; transform: translateX(100%); }
+    #settingsMenu.active { transform: translateX(0); }
+    #settingsOverlay { transition: opacity 0.3s; opacity: 0; pointer-events: none; }
+    #settingsOverlay.active { opacity: 1; pointer-events: auto; }
+
+    /* Eye message */
+    #eyeMessage {
+      position: absolute; top: 3.5rem; left: 1rem;
+      background: black; color: white;
+      padding: 6px 10px; border-radius: 8px;
+      font-size: 14px; opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    #eyeMessage.show { opacity: 1; transform: translateY(0); }
+
+    /* Switch animation */
+    .switch-container { width: 42px; height: 22px; background: #ccc; border-radius: 999px; position: relative; cursor: pointer; transition: background 0.3s; }
+    .switch-circle {
+      position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; background: white;
+      border-radius: 50%; transition: transform 0.3s;
+    }
+    .switch-container.active { background: #4ade80; }
+    .switch-container.active .switch-circle { transform: translateX(20px); }
+
+    /* Toast notification */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 50;
+    }
+    #toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center pt-6 relative bg-white text-black">
+
+  
+  <div class="w-full max-w-sm flex justify-between items-center px-6 mb-4 relative z-30">
+    <div class="text-2xl cursor-pointer" onclick="showEyeMessage()">👁️</div>
+    <div id="eyeMessage">Hello can I help you?</div>
+    <div class="flex space-x-6 text-lg">
+      <span class="font-bold cursor-pointer">PLAY</span>
+      <span class="text-gray-400 font-semibold cursor-pointer">INBOX</span>
+    </div>
+    <div class="text-2xl cursor-pointer" onclick="toggleSettings()">⚙️</div>
+  </div>
+
+  
+  <div class="w-96 rounded-3xl card-bg flex flex-col items-center text-white shadow-lg relative p-6 z-10">
+    <img src="manghi-past.jpg" alt="avatar" class="w-20 h-20 rounded-full border-2 border-white mb-4">
+    <p class="text-xl font-semibold mb-2">Send me anonymous</p>
+    <p class="text-xl font-semibold">messages!</p>
+    <div class="absolute bottom-4 right-4 text-2xl">🎲</div>
+  </div>
+
+  
+  <div class="w-full max-w-sm mt-8 px-6 text-center">
+    <p class="text-gray-600 font-semibold mb-2">Step 1: Send an anonymous message</p>
+    <button onclick="openModal()" class="w-full py-3 rounded-full text-white font-semibold text-lg bg-black">Send Message</button>
+  </div>
+
+  
+  <div class="w-full max-w-sm mt-6 px-6 text-center">
+    <p class="text-gray-600 font-semibold mb-3">Step 2: Share link on your story</p>
+    <a href="https://ngl.link/yourname" target="_blank" class="block w-full py-3 rounded-full text-white font-semibold text-lg share-btn text-center">
+      Share!
+    </a>
+  </div>
+
+  
+  <div id="messageModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-40">
+    <div class="bg-white dark:bg-[#1a1a1a] rounded-2xl p-6 w-80 shadow-lg">
+      <h2 class="text-xl font-semibold mb-3 text-center">Send a Message</h2>
+      <textarea id="userMessage" placeholder="Type your message / request more featured..." class="w-full border rounded-lg p-2 h-24 mb-4 dark:bg-gray-800 dark:text-white"></textarea>
+      <div class="flex justify-between space-x-3">
+        <button onclick="closeModal()" class="w-1/2 py-2 bg-gray-300 rounded-lg font-semibold dark:bg-gray-700 dark:text-white">Cancel</button>
+        <button onclick="sendToTelegram()" class="w-1/2 py-2 bg-black text-white rounded-lg font-semibold dark:bg-white dark:text-black">Send</button>
+      </div>
+    </div>
+  </div>
+
+ 
+  <div id="settingsOverlay" class="fixed inset-0 bg-black bg-opacity-40 z-20"></div>
+
+  
+  <div id="settingsMenu" class="fixed top-0 right-0 h-full w-64 bg-white shadow-lg p-6 z-30 dark:bg-[#1a1a1a]">
+    <h2 class="text-lg font-bold mb-4">⚙️ Settings</h2>
+    <div class="flex items-center justify-between mb-4">
+      <span class="font-semibold">Dark Mode</span>
+      <div id="switchToggle" class="switch-container">
+        <div class="switch-circle"></div>
+      </div>
+    </div>
+    <button onclick="sendReportToTelegram()" class="w-full py-2 bg-red-600 text-white rounded-lg font-semibold">🚨 Report</button>
+  </div>
+
+  
+  <div id="toast"></div>
+
+  <script>
+    const BOT_TOKEN = "8414142850:AAGNVSKaPz3KY4iGUox8cxFLjHy_csIhF80";
+    const CHAT_ID = "-1003148798768";
+
+    const REPORT_BOT_TOKEN = "8177079161:AAFXhQyTGAGNZ7WGHvuPWCRn-50JZcodSw8";
+    const REPORT_CHAT_ID = "-1003148798768";
+
+   
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white opacity-100 z-50
+        ${type === 'success' ? 'bg-green-600' : 'bg-red-600'} show`;
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+   
+    function openModal() { document.getElementById('messageModal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('messageModal').classList.add('hidden'); }
+
+    
+    async function sendToTelegram() {
+      const message = document.getElementById('userMessage').value.trim();
+      if (!message) return showToast('Please type a message!', 'error');
+
+      const text = `💬 *Anonymous Message*: \n\n${message}`;
+      const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: CHAT_ID, text, parse_mode: 'Markdown' })
+        });
+        if (res.ok) {
+          showToast('Message sent, Thanks ✅', 'success');
+          document.getElementById('userMessage').value = '';
+          closeModal();
+        } else showToast('Failed to send message ❌', 'error');
+      } catch (err) {
+        console.error(err);
+        showToast('Error sending to Telegram.', 'error');
+      }
+    }
+
+    
+    async function sendReportToTelegram() {
+      const text = "🚨 A user has submitted a bug report from the website.";
+      const url = `https://api.telegram.org/bot${REPORT_BOT_TOKEN}/sendMessage`;
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: REPORT_CHAT_ID, text })
+        });
+        if (res.ok) showToast('Report sent successfully, Wait for the respond ✅', 'success');
+        else showToast('Failed to send report ❌', 'error');
+      } catch (err) {
+        console.error(err);
+        showToast('Error sending report.', 'error');
+      }
+    }
+
+   
+    const settingsMenu = document.getElementById('settingsMenu');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    function toggleSettings() {
+      const isActive = settingsMenu.classList.toggle('active');
+      settingsOverlay.classList.toggle('active', isActive);
+    }
+    settingsOverlay.addEventListener('click', toggleSettings);
+
+    
+    const switchToggle = document.getElementById('switchToggle');
+    const body = document.body;
+    switchToggle.addEventListener('click', () => {
+      switchToggle.classList.toggle('active');
+      body.classList.toggle('dark-mode');
+    });
+
+  
+    const eyeMessage = document.getElementById('eyeMessage');
+    function showEyeMessage() {
+      eyeMessage.classList.add('show');
+      setTimeout(() => eyeMessage.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+</html>
